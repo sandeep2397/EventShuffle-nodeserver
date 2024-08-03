@@ -69,3 +69,4 @@ yarn.lock
 
 # other local files
 .vscode
+.vercel

@@ -66,8 +66,9 @@
   },
   "scripts": {
     "start": "node --loader ts-node/esm ./server/index.ts",
+    "build": "echo 'No build step required'",
     "server": "node ./dist-server/index.js --trace-warnings",
-    "dev": "PORT=3001 NODE_ENV=development npm-run-all build server",
+    "dev": "node --loader ts-node/esm ./server/index.ts",
     "win-dev": "set PORT=3001&& set NODE_ENV=development&& npm-run-all build server",
     "transpile": "tsc --project ./",
     "clean": "rimraf dist-server",

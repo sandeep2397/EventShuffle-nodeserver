@@ -1,120 +1,69 @@
-/**
- * Module dependencies.
- */
+import axios from "axios";
+import express from "express";
+import cors from "cors";
+import mongoose from "mongoose";
+import EventRouter from "./routes/events.js";
+import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
+import bodyParser from "body-parser";
+// Load environment variables from .env file
+dotenv.config();
 
-import http from "http";
-import app from "./app.js";
-import fs from "fs";
-import mongoose, { Connection } from "mongoose";
-
-let httpServer: http.Server;
-/**
- * Create HTTP server.
- */
+const app = express();
+const port = process.env.PORT || 3000;
 const mongoURL = process.env.MONGO_URL ?? "";
 
-let httpsInternalPort: number;
-export let httpsExternalPort: number;
-if (
-  !!process.env.HTTPS &&
-  process.env.HTTPS_KEY_PATH &&
-  process.env.HTTPS_CERT_PATH
-) {
-  /**
-   * Create HTTPS server.
-   */
-  // provide key/cert pem files as one line env variables replacing newLine sign with \n
-  const options = {
-    key: fs.readFileSync(process.env.HTTPS_KEY_PATH ?? "", {
-      encoding: "utf-8",
-    }),
-    cert: fs.readFileSync(process.env.HTTPS_CERT_PATH ?? "", {
-      encoding: "utf-8",
-    }),
-  };
+// Secret key for signing JWT
+const ACCESS_TOKEN_SECRET = "vercel";
 
-  // redirect http to https
-  httpServer = http.createServer(function (req, res) {
-    res.writeHead(301, {
-      Location:
-        "https://" +
-        req.headers["host"]?.split(":")[0] +
-        ":" +
-        httpsExternalPort +
-        req.url,
-    });
-    res.end();
+// Middleware to authenticate JWT
+const authenticateToken = (req: any, res: any, next: any) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (token == null) return res.sendStatus(401);
+
+  jwt.verify(token, ACCESS_TOKEN_SECRET, (err: any, user: any) => {
+    if (err) {
+      return res.status(403).send({
+        err,
+      });
+    }
+    req.user = user;
+    next();
   });
-} else {
-  /**
-   * Create HTTP server.
-   */
-  httpServer = http.createServer(app);
-}
+};
 
-/**
- * Normalize a port into a number, string, or false.
- */
+// Enable CORS for all routes
+app.use(cors());
+// app.disable('x-powered-by'); // security thing
+app.use(express.json());
+app.use(cors());
 
-function normalizePort(val: any) {
-  const p: number = parseInt(val, 10);
+axios.defaults.withCredentials = true;
 
-  if (Number.isNaN(p)) {
-    // named pipe
-    return val;
-  }
+app.use(express.urlencoded({ extended: false }));
 
-  if (p >= 0) {
-    // port number
-    return p;
-  }
+// Define your REST API endpoints
+app.get("/api", (req: any, res: any) => {
+  res.json({ message: "Hello, this is your REST API running on Vercel!" });
+});
 
-  return false;
-}
+app.get("/api/hello", (req: any, res: any) => {
+  res.json({ message: "Hello from another endpoint!" });
+});
 
-/**
- * Get port from environment and store in Express.
- */
-export const port: number = normalizePort(process.env.PORT || "3001");
-app.set("port", port);
+// Route to generate a token
+app.post("/api/login", (req, res) => {
+  const username = req.body.username;
+  const user = { name: username };
 
-/**
- * Event listener for HTTP server "error" event.
- */
+  const accessToken = jwt.sign(user, ACCESS_TOKEN_SECRET, { expiresIn: "1h" });
+  res.json({ accessToken });
+});
 
-function onError(error: any) {
-  if (error.syscall !== "listen") {
-    throw error;
-  }
+app.use("/api/v1/event", EventRouter);
 
-  const bind = typeof port === "string" ? `Pipe  ${port}` : `Port  ${port}`;
-
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case "EACCES":
-      console.log(`${bind} requires elevated privileges`);
-      console.error(error);
-      process.exit(1);
-      break;
-    case "EADDRINUSE":
-      console.error(error);
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
-}
-
-/**
- * Event listener for HTTP(S) server "listening" event.
- */
-function onListening(server: http.Server) {
-  console.log(`Listening on ${port}`);
-}
-
-/**
- * Listen on provided port, on all network interfaces.
- */
+// Start the server
 
 mongoose
   .connect(mongoURL, {
@@ -123,7 +72,9 @@ mongoose
   })
   .then(() => {
     console.log("Connected to MongoDB");
-    httpServer.listen(port);
-    httpServer.on("error", onError);
-    httpServer.on("listening", onListening);
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+    });
   });
+
+export default app;

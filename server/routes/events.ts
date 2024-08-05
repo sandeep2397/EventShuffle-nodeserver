@@ -1,11 +1,9 @@
 import { Router } from "express";
-import { Events } from "../models/event-votes.js";
-import mongoose, { Connection } from "mongoose";
-import { error } from "console";
-import { UserEvents } from "../models/user-event-votes.js";
-import _ from "lodash";
 import { ObjectId } from "mongodb";
+import mongoose from "mongoose";
 import { getAggregateEventResults } from "../helpers/queries.js";
+import { Events } from "../models/event-votes.js";
+import { UserEvents } from "../models/user-event-votes.js";
 const router = Router();
 
 const getEvent = async (id: ObjectId | string) => {
@@ -18,7 +16,7 @@ const getEvent = async (id: ObjectId | string) => {
 
 router.get("/list", async (req, res) => {
   try {
-    const PAGE_SIZE = 10;
+    const PAGE_SIZE = 30;
     const page = req.query?.page ? Number(req.query?.page) : 1;
     const limit = PAGE_SIZE;
     const skip = (page - 1) * limit;
@@ -39,14 +37,15 @@ router.get("/list", async (req, res) => {
 });
 
 router.get("/showevent/:id", async (req, res) => {
-  const id = req.params.id;
-  const eventData = await getEvent(id);
-  if (eventData) {
+  const eventId = req.params.id;
+  const newEventObjId = new mongoose.Types.ObjectId(eventId);
+  try {
+    const aggregatedResult = await getAggregateEventResults(newEventObjId);
     res.status(200).send({
-      data: eventData,
+      event: aggregatedResult,
     });
-  } else {
-    res.status(500).send({
+  } catch (err: any) {
+    res.status(400).send({
       error: "Event Not Found",
     });
   }
@@ -166,6 +165,7 @@ router.get("/:id/results", async (req, res) => {
       id: aggregatedResult?._id,
       name: aggregatedResult?.name,
       suitableDates: finalRes,
+      event: aggregatedResult,
     });
   } catch (err: any) {
     res.status(400).send({

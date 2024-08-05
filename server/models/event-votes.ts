@@ -6,16 +6,17 @@ export interface IVotes {
 }
 export interface IEvents extends Document {
   _id: Schema.Types.ObjectId;
-  name: string;
+  name: string;  
+  imageUrl: string;
   dates: string[];
-  votes: IVotes[]
 }
 
 export const EventSchema = new Schema(
   {
     _id: Schema.Types.ObjectId,
     name: { type: String, required: true, unique: true },
-    dates: {type:Array<string>, required: true,}
+    dates: {type:Array<string>, required: true,},
+    imageUrl:{type:String, required: true,}
   },
   {
     collection: "Events",

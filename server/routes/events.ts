@@ -71,6 +71,7 @@ router.post("/create", async (req, res) => {
     _id: new mongoose.Types.ObjectId(), // Unique ID for this entry
     name: inputData?.name,
     dates: inputData?.dates,
+    imageUrl: inputData?.imageUrl,
   });
   try {
     const eventData = await Event.save();

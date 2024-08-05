@@ -1,4 +1,4 @@
-import { Connection, Schema, model } from "mongoose";
+import { Schema, model } from "mongoose";
 
 export interface IVotes {
   date: string;
@@ -16,7 +16,7 @@ export const EventSchema = new Schema(
     _id: Schema.Types.ObjectId,
     name: { type: String, required: true, unique: true },
     dates: {type:Array<string>, required: true,},
-    imageUrl:{type:String, required: true,}
+    imageUrl:{type:String,}
   },
   {
     collection: "Events",

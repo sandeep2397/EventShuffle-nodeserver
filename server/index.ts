@@ -1,11 +1,10 @@
 import axios from "axios";
-import express from "express";
 import cors from "cors";
+import dotenv from "dotenv";
+import express from "express";
+import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import EventRouter from "./routes/events.js";
-import dotenv from "dotenv";
-import jwt from "jsonwebtoken";
-import bodyParser from "body-parser";
 // Load environment variables from .env file
 dotenv.config();
 
@@ -44,6 +43,10 @@ axios.defaults.withCredentials = true;
 app.use(express.urlencoded({ extended: false }));
 
 // Define your REST API endpoints
+app.get("/", (req: any, res: any) => {
+  res.json({ message: "Hello, Server is up and running!" });
+});
+
 app.get("/api", (req: any, res: any) => {
   res.json({ message: "Hello, this is your REST API running on Vercel!" });
 });
